@@ -40,7 +40,6 @@ const GetYoutubeInitData = async (url) => {
     var initdata = {};
     var apiToken = null;
     var context = null;
-    console.log(encodeURI(url));
     const page = await axios.get(encodeURI(url));
     const ytInitData = page.data.split('var ytInitialData =');
     if (ytInitData && ytInitData.length > 1) {
@@ -85,7 +84,6 @@ const GetListByKeyword = async (keyword, withPlaylist = false, limit = 0, option
             }
         }
     }
-    console.log(endpoint);
     const page = await GetYoutubeInitData(endpoint);
     const sectionListRenderer = page.initdata.contents.twoColumnSearchResultsRenderer.primaryContents
         .sectionListRenderer;
