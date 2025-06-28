@@ -24,6 +24,17 @@ const axios = {
   },
 }
 
+async function getHTML(url: string) {
+  let res = await fetch(url)
+  if (!res.ok) {
+    throw new Error(
+      `failed to GET html content, url: ${url} status: ${res.statusText || res.status}`,
+    )
+  }
+  let html = await res.text()
+  return html
+}
+
 const youtubeEndpoint = `https://www.youtube.com`
 
 export type YoutubeListItem = {
@@ -69,7 +80,7 @@ export type YoutubeListItem = {
         /** e.g. '15:00' */
         simpleText: string
       }
-  videos?: YoutubeSearchResult | YoutubePlaylistResult
+  videos?: YoutubeSearchResult | YoutubeAPI.GetPlaylistResult['initialData']
   videoCount?: number
   isLive?: boolean
 }
@@ -249,7 +260,8 @@ export const NextPage = async (
               thumbnail: playListRender.thumbnails,
               title: playListRender.title.simpleText,
               length: playListRender.videoCount,
-              videos: await GetPlaylistData(playListRender.playlistId),
+              videos: (await YoutubeAPI.getPlaylist(playListRender.playlistId))
+                .initialData,
             })
           }
         }
@@ -261,272 +273,6 @@ export const NextPage = async (
   }
   const itemsResult = limit != 0 ? items.slice(0, limit) : items
   return { items: itemsResult, nextPage: nextPage }
-}
-
-export type YoutubePlaylistResult = {
-  initdata: {
-    contents: {
-      /* for videos */
-      twoColumnBrowseResultsRenderer: {
-        tabs: Array<{
-          tabRenderer: {
-            selected: boolean /** e.g. true */
-            content: {
-              sectionListRenderer: {
-                contents: Array<{
-                  itemSectionRenderer?: {
-                    contents: Array<{
-                      playlistVideoListRenderer: {
-                        contents: Array<{
-                          playlistVideoRenderer: {
-                            videoId: string /** e.g. "aircAruvnKk" */
-                            thumbnail: {
-                              thumbnails: Array<{
-                                url: string /** e.g. "https://i.ytimg.com/vi/aircAruvnKk/hqdefault.jpg?..." */
-                                width: number /** e.g. 168 */
-                                height: number /** e.g. 94 */
-                              }>
-                            }
-                            title: {
-                              runs: Array<{
-                                text: string /** e.g. "But what is a neural network? | Deep learning chapter 1" */
-                              }>
-                              accessibility: {
-                                accessibilityData: {
-                                  label: string /** e.g. "But what is a neural network? | Deep learning chapter 1 18 分鐘" */
-                                }
-                              }
-                            }
-                            index: {
-                              simpleText: string /** e.g. "1" */
-                            }
-                            shortBylineText: {
-                              runs: Array<{
-                                text: string /** e.g. "3Blue1Brown" */
-                                navigationEndpoint: {
-                                  commandMetadata: {
-                                    webCommandMetadata: {
-                                      url: string /** e.g. "/channel/UCdIi8cjUtvHb1qLYo3AaY-Q" "/@3blue1brown" */
-                                    }
-                                  }
-                                }
-                              }>
-                            }
-                            lengthText: {
-                              simpleText: string /** e.g. "2:23" */
-                            }
-                            lengthSeconds: string /** e.g. "143" */
-                            videoInfo: {
-                              runs: Array<{
-                                text: string /** e.g. "收看次數：19M 次" */
-                              }>
-                            }
-                          }
-                        }>
-                      }
-                    }>
-                  }
-                }>
-              }
-            }
-          }
-        }>
-      }
-    }
-    /* for the playlist metadata */
-    header: {
-      playlistHeaderRenderer: {
-        playlistId: string /** e.g. "OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4" */
-        title: {
-          simpleText: string /** e.g. "Bamboo Echoes Vol. 1: Zephyr and Ink (竹林迴響第一卷：風與墨)" */
-        }
-        numVideosText: {
-          runs: Array<{
-            text: string /** e.g. "10" */
-          }>
-        }
-        viewCountText: {
-          simpleText: string /** e.g. "收看次數：7,816,351 次" */
-        }
-        shareData: {
-          canShare: boolean /** e.g. true */
-        }
-        privacy: string /** e.g. "PUBLIC" */
-        stats: Array<{
-          runs?: Array<{
-            text: string /** e.g. "10" */
-          }>
-          simpleText?: string /** e.g. "收看次數：7,816,351 次" */
-        }>
-        briefStats: Array<{
-          runs: Array<{
-            text: string /** e.g. "10" */
-          }>
-        }>
-        playlistHeaderBanner: {
-          heroPlaylistThumbnailRenderer: {
-            thumbnail: {
-              thumbnails: Array<{
-                url: string /** e.g. "https://i9.ytimg.com/s_p/OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4/mqdefault.jpg?sqp=CMz8_sIGir7X7AMICN-A88IGEAE=&rs=AOn4CLCf4a-nkl9K1qogIbqZ104-digqfw&v=1750909023" */
-                width: number /** e.g. 180 */
-                height: number /** e.g. 180 */
-              }>
-              sampledThumbnailColor: {
-                red: number /** e.g. 61 */
-                green: number /** e.g. 89 */
-                blue: number /** e.g. 82 */
-              }
-              darkColorPalette: {
-                section2Color: number /** e.g. 1713699 */
-                iconInactiveColor: number /** e.g. 7376004 */
-                iconDisabledColor: number /** e.g. 4413779 */
-              }
-              vibrantColorPalette: {
-                iconInactiveColor: number /** e.g. 7051660 */
-              }
-            }
-            maxRatio: number /** e.g. 0.5625 */
-            trackingParams: string /** e.g. "CB4Qw-wJIhMI-vSXru-TjgMVBDZ7Bx1u2zxe" */
-            onTap: {
-              clickTrackingParams: string /** e.g. "CB4Qw-wJIhMI-vSXru-TjgMVBDZ7Bx1u2zxeWitWTE9MQUs1dXlfbUJOV3hhM3NwNUdFRFphUmRydERkNURXRUp6S2Iyckk0mgEDEPos" */
-              commandMetadata: {
-                webCommandMetadata: {
-                  url: string /** e.g. "/watch?v=jsHol-uCDHs&list=OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4&pp=8AUB" */
-                  webPageType: string /** e.g. "WEB_PAGE_TYPE_WATCH" */
-                  rootVe: number /** e.g. 3832 */
-                }
-              }
-              watchEndpoint: {
-                videoId: string /** e.g. "jsHol-uCDHs" */
-                playlistId: string /** e.g. "OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4" */
-                playerParams: string /** e.g. "8AUB" */
-                loggingContext: {
-                  vssLoggingContext: {
-                    serializedContextData: string /** e.g. "GilPTEFLNXV5X21CTld4YTNzcDVHRURaYVJkcnREZDVEV0VKektiMnJJNA%3D%3D" */
-                  }
-                }
-                watchEndpointSupportedOnesieConfig: {
-                  html5PlaybackOnesieConfig: {
-                    commonConfig: {
-                      url: string /** e.g. "https://rr2---sn-i5goxu-i3bl.googlevideo.com/initplayback?source=youtube&oeis=1&c=WEB&oad=3200&ovd=3200&oaad=11000&oavd=11000&ocs=700&oewis=1&oputc=1&ofpcc=1&msp=1&odepv=1&onvi=1&oreouc=1&id=8ec1e897eb820c7b&ip=175.159.0.179&initcwndbps=3907500&mt=1751104634&oweuc=&pxtags=Cg4KAnR4Egg1MTQ3ODMyMQ&rxtags=Cg4KAnR4Egg1MTQ3ODMyMA%2CCg4KAnR4Egg1MTQ3ODMyMQ%2CCg4KAnR4Egg1MTQ3ODMyMg" */
-                    }
-                  }
-                }
-              }
-            }
-            thumbnailOverlays: {
-              thumbnailOverlayHoverTextRenderer: {
-                text: {
-                  simpleText: string /** e.g. "全部播放" */
-                }
-                icon: {
-                  iconType: string /** e.g. "PLAY_ALL" */
-                }
-              }
-            }
-          }
-        }
-        subtitle: {
-          simpleText: string /** e.g. "MoodEchoes BGM • 專輯" */
-        }
-        byline: Array<{
-          playlistBylineRenderer: {
-            text: {
-              runs?: Array<{
-                text: string /** e.g. "10" */
-              }>
-              simpleText?: string /** e.g. "收看次數：0 次" */
-            }
-          }
-        }>
-      }
-    }
-    /* for the playlist metadata */
-    metadata: {
-      playlistMetadataRenderer: {
-        title: string /** e.g. "Bamboo Echoes Vol. 1: Zephyr and Ink (竹林迴響第一卷：風與墨)" */
-        description?: string /** e.g. "Learn the basics of neural networks and backpropagation, one of the most important algorithms for the modern world." */
-        androidAppindexingLink: string /** e.g. "android-app://com.google.android.youtube/http/www.youtube.com/playlist?list=OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4" */
-        iosAppindexingLink: string /** e.g. "ios-app://544007664/vnd.youtube/www.youtube.com/playlist?list=OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4" */
-        /* below fields only available in album playlist */
-        playUrl?: string /** e.g. "www.youtube.com/playlist?list=OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4" */
-        androidPlayUrl?: string /** e.g. "android-app://com.google.android.youtube/http/www.youtube.com/playlist?list=OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4" */
-        albumName?: string /** e.g. "Bamboo Echoes Vol. 1: Zephyr and Ink (竹林迴響第一卷：風與墨)" */
-      }
-    }
-    microformat: {
-      microformatDataRenderer: {
-        urlCanonical: string /** e.g. "http://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi" */
-        title: string /** e.g. "Neural networks" */
-        description: string /** e.g. "Learn the basics of neural networks and backpropagation, one of the most important algorithms for the modern world." */
-        thumbnail: {
-          thumbnails: Array<{
-            url: string /** e.g. "https://i9.ytimg.com/s_p/PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi/landscape_mqdefault.jpg?sqp=CKyP_8IGir7X7AMICNGyiNsFEAE=&rs=AOn4CLAwxt6EqoBfqi-ThrGoFcHnjN3HSQ&v=1533155665&days_since_epoch=20267" */
-            width: number /** e.g. 320 */
-            height: number /** e.g. 180 */
-          }>
-        }
-      }
-    }
-    /* for the playlist metadata, with only first video */
-    sidebar: {
-      playlistSidebarRenderer: {
-        items: Array<{
-          playlistSidebarPrimaryInfoRenderer: {
-            thumbnailRenderer: {
-              playlistCustomThumbnailRenderer: {
-                thumbnail: {
-                  thumbnails: Array<{
-                    url: string /** e.g. "https://i9.ytimg.com/s_p/OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4/mqdefault.jpg?sqp=CMz8_sIGir7X7AMICN-A88IGEAE=&rs=AOn4CLCf4a-nkl9K1qogIbqZ104-digqfw&v=1750909023" */
-                    width: number /** e.g. 180 */
-                    height: number /** e.g. 180 */
-                  }>
-                }
-              }
-            }
-            title: {
-              runs: Array<{
-                text: string /** e.g. "Bamboo Echoes Vol. 1: Zephyr and Ink (竹林迴響第一卷：風與墨)" */
-                navigationEndpoint: {
-                  commandMetadata: {
-                    webCommandMetadata: {
-                      url: string /** e.g. "/watch?v=jsHol-uCDHs&list=OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4&pp=8AUB" */
-                      webPageType: string /** e.g. "WEB_PAGE_TYPE_WATCH" */
-                      rootVe: number /** e.g. 3832 */
-                    }
-                  }
-                  watchEndpoint: {
-                    videoId: string /** e.g. "jsHol-uCDHs" */
-                    playlistId: string /** e.g. "OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4" */
-                  }
-                }
-              }>
-            }
-            stats: Array<{
-              runs?: Array<{
-                text: string /** e.g. "10" */
-              }>
-              simpleText?: string /** e.g. "收看次數：7,816,351 次" */
-            }>
-          }
-        }>
-      }
-    }
-  }
-  context: {
-    client: {
-      hl: string /** e.g. "zh-HK" */
-      gl: string /** e.g. "HK" */
-    }
-  }
-}
-
-export const GetPlaylistData = async (
-  playlistId: string,
-): Promise<YoutubePlaylistResult> => {
-  const endpoint = `${youtubeEndpoint}/playlist?list=${playlistId}`
-  const initData = await GetYoutubeInitData(endpoint)
-  return initData as YoutubePlaylistResult
 }
 
 export type YoutubeSuggestResult = {
@@ -981,6 +727,320 @@ export const GetShortVideo = async () => {
   }))
 }
 
+export namespace YoutubeAPI {
+  export type GetPlaylistResult = {
+    initialData: {
+      contents: {
+        /* for videos */
+        twoColumnBrowseResultsRenderer: {
+          tabs: Array<{
+            tabRenderer: {
+              selected: boolean /** e.g. true */
+              content: {
+                sectionListRenderer: {
+                  contents: Array<{
+                    itemSectionRenderer?: {
+                      contents: Array<{
+                        playlistVideoListRenderer: {
+                          contents: Array<{
+                            playlistVideoRenderer: {
+                              videoId: string /** e.g. "aircAruvnKk" */
+                              thumbnail: {
+                                thumbnails: Array<{
+                                  url: string /** e.g. "https://i.ytimg.com/vi/aircAruvnKk/hqdefault.jpg?..." */
+                                  width: number /** e.g. 168 */
+                                  height: number /** e.g. 94 */
+                                }>
+                              }
+                              title: {
+                                runs: Array<{
+                                  text: string /** e.g. "But what is a neural network? | Deep learning chapter 1" */
+                                }>
+                                accessibility: {
+                                  accessibilityData: {
+                                    label: string /** e.g. "But what is a neural network? | Deep learning chapter 1 18 分鐘" */
+                                  }
+                                }
+                              }
+                              index: {
+                                simpleText: string /** e.g. "1" */
+                              }
+                              shortBylineText: {
+                                runs: Array<{
+                                  text: string /** e.g. "3Blue1Brown" */
+                                  navigationEndpoint: {
+                                    commandMetadata: {
+                                      webCommandMetadata: {
+                                        url: string /** e.g. "/channel/UCdIi8cjUtvHb1qLYo3AaY-Q" "/@3blue1brown" */
+                                      }
+                                    }
+                                  }
+                                }>
+                              }
+                              lengthText: {
+                                simpleText: string /** e.g. "2:23" */
+                              }
+                              lengthSeconds: string /** e.g. "143" */
+                              videoInfo: {
+                                runs: Array<{
+                                  text: string /** e.g. "收看次數：19M 次" */
+                                }>
+                              }
+                            }
+                          }>
+                        }
+                      }>
+                    }
+                  }>
+                }
+              }
+            }
+          }>
+        }
+      }
+      /* for the playlist metadata */
+      header: {
+        playlistHeaderRenderer: {
+          playlistId: string /** e.g. "OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4" */
+          title: {
+            simpleText: string /** e.g. "Bamboo Echoes Vol. 1: Zephyr and Ink (竹林迴響第一卷：風與墨)" */
+          }
+          numVideosText: {
+            runs: Array<{
+              text: string /** e.g. "10" */
+            }>
+          }
+          viewCountText: {
+            simpleText: string /** e.g. "收看次數：7,816,351 次" */
+          }
+          shareData: {
+            canShare: boolean /** e.g. true */
+          }
+          privacy: string /** e.g. "PUBLIC" */
+          stats: Array<{
+            runs?: Array<{
+              text: string /** e.g. "10" */
+            }>
+            simpleText?: string /** e.g. "收看次數：7,816,351 次" */
+          }>
+          briefStats: Array<{
+            runs: Array<{
+              text: string /** e.g. "10" */
+            }>
+          }>
+          playlistHeaderBanner: {
+            heroPlaylistThumbnailRenderer: {
+              thumbnail: {
+                thumbnails: Array<{
+                  url: string /** e.g. "https://i9.ytimg.com/s_p/OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4/mqdefault.jpg?sqp=CMz8_sIGir7X7AMICN-A88IGEAE=&rs=AOn4CLCf4a-nkl9K1qogIbqZ104-digqfw&v=1750909023" */
+                  width: number /** e.g. 180 */
+                  height: number /** e.g. 180 */
+                }>
+                sampledThumbnailColor: {
+                  red: number /** e.g. 61 */
+                  green: number /** e.g. 89 */
+                  blue: number /** e.g. 82 */
+                }
+                darkColorPalette: {
+                  section2Color: number /** e.g. 1713699 */
+                  iconInactiveColor: number /** e.g. 7376004 */
+                  iconDisabledColor: number /** e.g. 4413779 */
+                }
+                vibrantColorPalette: {
+                  iconInactiveColor: number /** e.g. 7051660 */
+                }
+              }
+              maxRatio: number /** e.g. 0.5625 */
+              trackingParams: string /** e.g. "CB4Qw-wJIhMI-vSXru-TjgMVBDZ7Bx1u2zxe" */
+              onTap: {
+                clickTrackingParams: string /** e.g. "CB4Qw-wJIhMI-vSXru-TjgMVBDZ7Bx1u2zxeWitWTE9MQUs1dXlfbUJOV3hhM3NwNUdFRFphUmRydERkNURXRUp6S2Iyckk0mgEDEPos" */
+                commandMetadata: {
+                  webCommandMetadata: {
+                    url: string /** e.g. "/watch?v=jsHol-uCDHs&list=OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4&pp=8AUB" */
+                    webPageType: string /** e.g. "WEB_PAGE_TYPE_WATCH" */
+                    rootVe: number /** e.g. 3832 */
+                  }
+                }
+                watchEndpoint: {
+                  videoId: string /** e.g. "jsHol-uCDHs" */
+                  playlistId: string /** e.g. "OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4" */
+                  playerParams: string /** e.g. "8AUB" */
+                  loggingContext: {
+                    vssLoggingContext: {
+                      serializedContextData: string /** e.g. "GilPTEFLNXV5X21CTld4YTNzcDVHRURaYVJkcnREZDVEV0VKektiMnJJNA%3D%3D" */
+                    }
+                  }
+                  watchEndpointSupportedOnesieConfig: {
+                    html5PlaybackOnesieConfig: {
+                      commonConfig: {
+                        url: string /** e.g. "https://rr2---sn-i5goxu-i3bl.googlevideo.com/initplayback?source=youtube&oeis=1&c=WEB&oad=3200&ovd=3200&oaad=11000&oavd=11000&ocs=700&oewis=1&oputc=1&ofpcc=1&msp=1&odepv=1&onvi=1&oreouc=1&id=8ec1e897eb820c7b&ip=175.159.0.179&initcwndbps=3907500&mt=1751104634&oweuc=&pxtags=Cg4KAnR4Egg1MTQ3ODMyMQ&rxtags=Cg4KAnR4Egg1MTQ3ODMyMA%2CCg4KAnR4Egg1MTQ3ODMyMQ%2CCg4KAnR4Egg1MTQ3ODMyMg" */
+                      }
+                    }
+                  }
+                }
+              }
+              thumbnailOverlays: {
+                thumbnailOverlayHoverTextRenderer: {
+                  text: {
+                    simpleText: string /** e.g. "全部播放" */
+                  }
+                  icon: {
+                    iconType: string /** e.g. "PLAY_ALL" */
+                  }
+                }
+              }
+            }
+          }
+          subtitle: {
+            simpleText: string /** e.g. "MoodEchoes BGM • 專輯" */
+          }
+          byline: Array<{
+            playlistBylineRenderer: {
+              text: {
+                runs?: Array<{
+                  text: string /** e.g. "10" */
+                }>
+                simpleText?: string /** e.g. "收看次數：0 次" */
+              }
+            }
+          }>
+        }
+      }
+      /* for the playlist metadata */
+      metadata: {
+        playlistMetadataRenderer: {
+          title: string /** e.g. "Bamboo Echoes Vol. 1: Zephyr and Ink (竹林迴響第一卷：風與墨)" */
+          description?: string /** e.g. "Learn the basics of neural networks and backpropagation, one of the most important algorithms for the modern world." */
+          androidAppindexingLink: string /** e.g. "android-app://com.google.android.youtube/http/www.youtube.com/playlist?list=OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4" */
+          iosAppindexingLink: string /** e.g. "ios-app://544007664/vnd.youtube/www.youtube.com/playlist?list=OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4" */
+          /* below fields only available in album playlist */
+          playUrl?: string /** e.g. "www.youtube.com/playlist?list=OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4" */
+          androidPlayUrl?: string /** e.g. "android-app://com.google.android.youtube/http/www.youtube.com/playlist?list=OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4" */
+          albumName?: string /** e.g. "Bamboo Echoes Vol. 1: Zephyr and Ink (竹林迴響第一卷：風與墨)" */
+        }
+      }
+      microformat: {
+        microformatDataRenderer: {
+          urlCanonical: string /** e.g. "http://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi" */
+          title: string /** e.g. "Neural networks" */
+          description: string /** e.g. "Learn the basics of neural networks and backpropagation, one of the most important algorithms for the modern world." */
+          thumbnail: {
+            thumbnails: Array<{
+              url: string /** e.g. "https://i9.ytimg.com/s_p/PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi/landscape_mqdefault.jpg?sqp=CKyP_8IGir7X7AMICNGyiNsFEAE=&rs=AOn4CLAwxt6EqoBfqi-ThrGoFcHnjN3HSQ&v=1533155665&days_since_epoch=20267" */
+              width: number /** e.g. 320 */
+              height: number /** e.g. 180 */
+            }>
+          }
+        }
+      }
+      /* for the playlist metadata, with only first video */
+      sidebar: {
+        playlistSidebarRenderer: {
+          items: Array<{
+            playlistSidebarPrimaryInfoRenderer: {
+              thumbnailRenderer: {
+                playlistCustomThumbnailRenderer: {
+                  thumbnail: {
+                    thumbnails: Array<{
+                      url: string /** e.g. "https://i9.ytimg.com/s_p/OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4/mqdefault.jpg?sqp=CMz8_sIGir7X7AMICN-A88IGEAE=&rs=AOn4CLCf4a-nkl9K1qogIbqZ104-digqfw&v=1750909023" */
+                      width: number /** e.g. 180 */
+                      height: number /** e.g. 180 */
+                    }>
+                  }
+                }
+              }
+              title: {
+                runs: Array<{
+                  text: string /** e.g. "Bamboo Echoes Vol. 1: Zephyr and Ink (竹林迴響第一卷：風與墨)" */
+                  navigationEndpoint: {
+                    commandMetadata: {
+                      webCommandMetadata: {
+                        url: string /** e.g. "/watch?v=jsHol-uCDHs&list=OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4&pp=8AUB" */
+                        webPageType: string /** e.g. "WEB_PAGE_TYPE_WATCH" */
+                        rootVe: number /** e.g. 3832 */
+                      }
+                    }
+                    watchEndpoint: {
+                      videoId: string /** e.g. "jsHol-uCDHs" */
+                      playlistId: string /** e.g. "OLAK5uy_mBNWxa3sp5GEDZaRdrtDd5DWEJzKb2rI4" */
+                    }
+                  }
+                }>
+              }
+              stats: Array<{
+                runs?: Array<{
+                  text: string /** e.g. "10" */
+                }>
+                simpleText?: string /** e.g. "收看次數：7,816,351 次" */
+              }>
+            }
+          }>
+        }
+      }
+    }
+    apiKey: string
+    context: {
+      client: {
+        hl: string /** e.g. "zh-HK" */
+        gl: string /** e.g. "HK" */
+      }
+    }
+    html: string
+  }
+
+  export async function getPlaylist(
+    playlistId: string,
+  ): Promise<GetPlaylistResult> {
+    let endpoint = `${youtubeEndpoint}/playlist?list=${playlistId}`
+    let html = await getHTML(endpoint)
+    let initialData = parseInitialData(html)
+    let apiKey = parseApiKey(html)
+    let context = parseContext(html)
+    return {
+      initialData,
+      apiKey,
+      context,
+      html,
+    }
+  }
+
+  function parseInitialData(html: string): any {
+    let startPattern = 'var ytInitialData = '
+    let endPattern = ';</script>'
+
+    let startIndex = html.indexOf(startPattern)
+    if (startIndex == -1) throw new Error('Initial data not found')
+
+    let endIndex = html.indexOf(endPattern, startIndex)
+    if (endIndex == -1) throw new Error('Initial data not found')
+
+    let initialData = html.slice(startIndex + startPattern.length, endIndex)
+    return JSON.parse(initialData)
+  }
+
+  function parseApiKey(html: string): string {
+    // e.g. ',"innertubeApiKey":"...",'
+    let startPattern = '"innertubeApiKey":"'
+    let endPattern = '",'
+
+    let startIndex = html.indexOf(startPattern)
+    if (startIndex == -1) throw new Error('Api key not found')
+
+    let endIndex = html.indexOf(endPattern, startIndex)
+    if (endIndex == -1) throw new Error('Api key not found')
+
+    return html.slice(startIndex + startPattern.length, endIndex)
+  }
+
+  function parseContext(html: string) {
+    let key = 'INNERTUBE_CONTEXT'
+    let parts = html.split(key)
+    // e.g. '...,"INNERTUBE_CONTEXT":{...},"INNERTUBE_CONTEXT_CLIENT_NAME":...'
+    if (parts.length < 2) throw new Error('Context not found')
+    return JSON.parse(parts[1].trim().slice(2, -2))
+  }
+}
+
 export namespace YoutubeSearchAPIHelper {
   export type VideoListItem = {
     id: string
@@ -1057,64 +1117,59 @@ export namespace YoutubeSearchAPIHelper {
     }[]
   }
   export async function getPlaylist(playlistId: string): Promise<PlaylistData> {
-    const playlist = await GetPlaylistData(playlistId)
+    const playlist = await YoutubeAPI.getPlaylist(playlistId)
+    let data = playlist.initialData
     let videos: PlaylistData['videos'] = []
-    playlist.initdata.contents.twoColumnBrowseResultsRenderer.tabs.forEach(
-      tab => {
-        tab.tabRenderer.content.sectionListRenderer.contents.forEach(
-          content => {
-            content.itemSectionRenderer?.contents.forEach(content => {
-              content.playlistVideoListRenderer.contents.forEach(content => {
-                let video = content.playlistVideoRenderer
-                /** e.g. "/channel/UCdIi8cjUtvHb1qLYo3AaY-Q" "/@3blue1brown" */
-                let channelUrl =
-                  video.shortBylineText.runs[0].navigationEndpoint
-                    .commandMetadata.webCommandMetadata.url
-                let channelId
-                let username
-                if (channelUrl.startsWith('/channel/')) {
-                  channelId = channelUrl.split('/').pop()!
-                }
-                if (channelUrl.startsWith('/@')) {
-                  username = channelUrl.slice(2)
-                }
-                videos.push({
-                  videoId: video.videoId,
-                  title: video.title.runs[0].text,
-                  index: +video.index.simpleText,
-                  channel: {
-                    name: video.shortBylineText.runs[0].text,
-                    channelId,
-                    username,
-                  },
-                  lengthText: video.lengthText.simpleText,
-                  lengthSeconds: +video.lengthSeconds,
-                  viewsText: parseViewCount(video.videoInfo.runs[0].text),
-                  thumbnails: video.thumbnail.thumbnails.map(thumbnail => ({
-                    url: removeSearchParams(thumbnail.url),
-                    width: thumbnail.width,
-                    height: thumbnail.height,
-                  })),
-                })
-              })
+    data.contents.twoColumnBrowseResultsRenderer.tabs.forEach(tab => {
+      tab.tabRenderer.content.sectionListRenderer.contents.forEach(content => {
+        content.itemSectionRenderer?.contents.forEach(content => {
+          content.playlistVideoListRenderer.contents.forEach(content => {
+            let video = content.playlistVideoRenderer
+            /** e.g. "/channel/UCdIi8cjUtvHb1qLYo3AaY-Q" "/@3blue1brown" */
+            let channelUrl =
+              video.shortBylineText.runs[0].navigationEndpoint.commandMetadata
+                .webCommandMetadata.url
+            let channelId
+            let username
+            if (channelUrl.startsWith('/channel/')) {
+              channelId = channelUrl.split('/').pop()!
+            }
+            if (channelUrl.startsWith('/@')) {
+              username = channelUrl.slice(2)
+            }
+            videos.push({
+              videoId: video.videoId,
+              title: video.title.runs[0].text,
+              index: +video.index.simpleText,
+              channel: {
+                name: video.shortBylineText.runs[0].text,
+                channelId,
+                username,
+              },
+              lengthText: video.lengthText.simpleText,
+              lengthSeconds: +video.lengthSeconds,
+              viewsText: parseViewCount(video.videoInfo.runs[0].text),
+              thumbnails: video.thumbnail.thumbnails.map(thumbnail => ({
+                url: removeSearchParams(thumbnail.url),
+                width: thumbnail.width,
+                height: thumbnail.height,
+              })),
             })
-          },
-        )
-      },
-    )
+          })
+        })
+      })
+    })
     return {
       locale: playlist.context.client.hl,
       playlist: {
-        playlistId: playlist.initdata.header.playlistHeaderRenderer.playlistId,
-        title: playlist.initdata.header.playlistHeaderRenderer.title.simpleText,
+        playlistId: data.header.playlistHeaderRenderer.playlistId,
+        title: data.header.playlistHeaderRenderer.title.simpleText,
         videoCount:
-          +playlist.initdata.header.playlistHeaderRenderer.numVideosText.runs[0]
-            .text,
+          +data.header.playlistHeaderRenderer.numVideosText.runs[0].text,
         viewCount: parseVideoCount(
-          playlist.initdata.header.playlistHeaderRenderer.viewCountText
-            .simpleText,
+          data.header.playlistHeaderRenderer.viewCountText.simpleText,
         ),
-        privacy: playlist.initdata.header.playlistHeaderRenderer.privacy,
+        privacy: data.header.playlistHeaderRenderer.privacy,
       },
       videos,
     }
