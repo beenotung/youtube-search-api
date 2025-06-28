@@ -757,3 +757,48 @@ export const GetShortVideo = async () => {
     inlinePlaybackEndpoint: json.inlinePlaybackEndpoint || {},
   }))
 }
+
+export namespace YoutubeSearchAPIHelper {
+  export type VideoListItem = {
+    id: string
+    title: string
+    publishedTimeText?: string
+    duration?: string
+    viewCountText?: string
+    thumbnails: {
+      url: string
+      width: number
+      height: number
+    }[]
+  }
+  export async function getChannelVideos(channelId: string) {
+    let channel = await GetChannelById(channelId)
+    let videos: VideoListItem[] = []
+    channel.forEach(tab =>
+      tab.content?.sectionListRenderer.contents.forEach(content => {
+        content.itemSectionRenderer.contents.forEach(content => {
+          content.shelfRenderer?.content.horizontalListRenderer.items.forEach(
+            item => {
+              let video = item.gridVideoRenderer
+              if (video) {
+                videos.push({
+                  id: video.videoId,
+                  title: video.title.simpleText,
+                  publishedTimeText: video.publishedTimeText?.simpleText,
+                  duration: video.thumbnailOverlays.find(
+                    overlay =>
+                      overlay.thumbnailOverlayTimeStatusRenderer?.text
+                        ?.simpleText,
+                  )?.thumbnailOverlayTimeStatusRenderer?.text?.simpleText,
+                  viewCountText: video.viewCountText?.simpleText,
+                  thumbnails: video.thumbnail.thumbnails,
+                })
+              }
+            },
+          )
+        })
+      }),
+    )
+    return videos
+  }
+}
